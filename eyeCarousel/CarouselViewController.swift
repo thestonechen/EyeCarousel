@@ -12,15 +12,14 @@ class CarouselViewController: UIViewController {
     private var images = [UIImage]()
     private let collectionView = UICollectionView(frame: .zero,
                                           collectionViewLayout: UICollectionViewFlowLayout())
-    
 
     init(images: [UIImage]) {
-        self.images = images
         super.init(nibName: nil, bundle: nil)
+        self.images = images
     }
     
     func addImage(image: UIImage) {
-        images.append(image)
+        self.images.append(image)
         self.collectionView.reloadData()
     }
     
@@ -30,18 +29,36 @@ class CarouselViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.collectionView.delegate = self
-        self.collectionView.dataSource = self
-        self.collectionView.register(PhotoCollectionViewCell.self,
-                                     forCellWithReuseIdentifier: PhotoCollectionViewCell.identifier)
-        self.view.addSubview(collectionView)
+        self.setupCollectionView()
+        self.view.addSubview(self.collectionView)
     }
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         self.collectionView.frame = self.view.bounds
     }
+    
+    func setupCollectionView() {
+        self.collectionView.delegate = self
+        self.collectionView.dataSource = self
+        self.collectionView.register(PhotoCollectionViewCell.self,
+                                     forCellWithReuseIdentifier: PhotoCollectionViewCell.identifier)
+        
+        
+        
+        if let layout = self.collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
+            layout.scrollDirection = .horizontal
+        }
+        
+        self.collectionView.isPagingEnabled = true
+    }
+    
+    
+    func changeToNextImage() {
+        //self.collectionView.scrollToItem(at: <#T##IndexPath#>, at: <#T##UICollectionView.ScrollPosition#>, animated: <#T##Bool#>)
+    }
 }
+
 
 extension CarouselViewController: UICollectionViewDelegate {
     
@@ -50,8 +67,6 @@ extension CarouselViewController: UICollectionViewDelegate {
         // Do something when selected? Or actually not needed...
     }
 }
-
-
 
 extension CarouselViewController: UICollectionViewDataSource {
     
@@ -70,8 +85,8 @@ extension CarouselViewController: UICollectionViewDataSource {
 extension CarouselViewController: UICollectionViewDelegateFlowLayout{
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: (self.view.frame.size.width/3) - 3,
-                      height: (self.view.frame.size.height/3) - 3)
+        return CGSize(width: self.collectionView.frame.size.width - 1,
+                      height: self.collectionView.frame.size.height)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
@@ -85,4 +100,5 @@ extension CarouselViewController: UICollectionViewDelegateFlowLayout{
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
         return UIEdgeInsets(top: 1, left: 1, bottom: 1, right: 1)
     }
+
 }
