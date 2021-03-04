@@ -65,10 +65,10 @@
 				660DAFCE25EB595C00645F17 /* HomeViewController.swift */,
 				6649E8F625ECA07C00F16B34 /* CarouselViewController.swift */,
 				6649E8F225EC126200F16B34 /* PhotoCollectionViewCell.swift */,
+				6649E8FE25EF7C1100F16B34 /* FaceTracker.swift */,
 				660DAFD325EB595D00645F17 /* Assets.xcassets */,
 				660DAFD525EB595D00645F17 /* LaunchScreen.storyboard */,
 				660DAFD825EB595D00645F17 /* Info.plist */,
-				6649E8FE25EF7C1100F16B34 /* FaceTracker.swift */,
 			);
 			path = eyeCarousel;
 			sourceTree = "<group>";

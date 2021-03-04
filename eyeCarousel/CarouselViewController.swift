@@ -64,11 +64,11 @@ class CarouselViewController: UIViewController {
     func handleIndexingForInfiniteLooping(_ scrollView: UIScrollView) {
         let index = Int((collectionView.contentOffset.x)/(collectionView.bounds.size.width))
 
-        if index != self.images.count - 1 {
+        guard index == self.images.count - 1 else {
             return
         }
 
-        // If we're at the duplicate first image, set the contentOffset to be 0
+        // If we're at the last image, which is the duplicated first image, set the contentOffset to be 0
         self.collectionView.setContentOffset(CGPoint(x: 0, y: self.collectionView.contentOffset.y), animated: false)
     }
 }
