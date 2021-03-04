@@ -13,13 +13,16 @@ class CarouselViewController: UIViewController {
     private let collectionView = UICollectionView(frame: .zero,
                                           collectionViewLayout: UICollectionViewFlowLayout())
 
-    init(images: [UIImage]) {
+    init(image: UIImage) {
         super.init(nibName: nil, bundle: nil)
-        self.images = images
+        
+        // Want the first element to be the first and last for infinite looping purposes
+        self.images = [image, image]
     }
     
     func addImage(image: UIImage) {
-        self.images.append(image)
+        // Since we duplicate the first image to be the first and last, we need to insert new images to be second to last
+        self.images.insert(image, at: self.images.count-1)
         self.collectionView.reloadData()
     }
     
@@ -57,6 +60,17 @@ class CarouselViewController: UIViewController {
     func changeToNextImage() {
         //self.collectionView.scrollToItem(at: <#T##IndexPath#>, at: <#T##UICollectionView.ScrollPosition#>, animated: <#T##Bool#>)
     }
+    
+    func handleIndexingForInfiniteLooping(_ scrollView: UIScrollView) {
+        let index = Int((collectionView.contentOffset.x)/(collectionView.bounds.size.width))
+
+        if index != self.images.count - 1 {
+            return
+        }
+
+        // If we're at the duplicate first image, set the contentOffset to be 0
+        self.collectionView.setContentOffset(CGPoint(x: 0, y: self.collectionView.contentOffset.y), animated: false)
+    }
 }
 
 
@@ -65,6 +79,10 @@ extension CarouselViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         self.collectionView.deselectItem(at: indexPath, animated: true)
         // Do something when selected? Or actually not needed...
+    }
+    
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        self.handleIndexingForInfiniteLooping(scrollView)
     }
 }
 

@@ -52,7 +52,7 @@ extension HomeViewController: PHPickerViewControllerDelegate {
                             if let carouselVC = carouselVC {
                                 carouselVC.addImage(image: image)
                             } else {
-                                carouselVC = CarouselViewController(images: [image])
+                                carouselVC = CarouselViewController(image: image)
                                 self.navigationController?.pushViewController(carouselVC!, animated: true)
                             }
                         }
