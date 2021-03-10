@@ -8,16 +8,18 @@
 import UIKit
 
 class CarouselViewController: UIViewController {
-    
-    private var images = [UIImage]()
-    private let collectionView = UICollectionView(frame: .zero,
-                                          collectionViewLayout: UICollectionViewFlowLayout())
+
+    private var images: [UIImage]
+    private var faceTracker: FaceTracker
+    private let collectionView: UICollectionView
 
     init(image: UIImage) {
-        super.init(nibName: nil, bundle: nil)
-        
         // Want the first element to be the first and last for infinite looping purposes
         self.images = [image, image]
+        self.faceTracker = FaceTracker()
+        self.collectionView = UICollectionView(frame: .zero,
+                                               collectionViewLayout: UICollectionViewFlowLayout())
+        super.init(nibName: nil, bundle: nil)
     }
     
     func addImage(image: UIImage) {
@@ -34,6 +36,9 @@ class CarouselViewController: UIViewController {
         super.viewDidLoad()
         self.setupCollectionView()
         self.view.addSubview(self.collectionView)
+        
+        // Start face tracker
+        self.faceTracker.resume()
     }
     
     override func viewDidLayoutSubviews() {
@@ -62,6 +67,7 @@ class CarouselViewController: UIViewController {
     }
     
     func handleIndexingForInfiniteLooping(_ scrollView: UIScrollView) {
+        
         let index = Int((collectionView.contentOffset.x)/(collectionView.bounds.size.width))
 
         guard index == self.images.count - 1 else {
@@ -118,5 +124,4 @@ extension CarouselViewController: UICollectionViewDelegateFlowLayout{
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
         return UIEdgeInsets(top: 1, left: 1, bottom: 1, right: 1)
     }
-
 }
