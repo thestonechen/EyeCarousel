@@ -159,7 +159,7 @@ extension FaceTracker: AVCaptureMetadataOutputObjectsDelegate {
         
         let isFaceDetected = metadataObjects.contains(where: { $0.type == .face })
         
-        print(isFaceDetected)
+        //print(isFaceDetected)
         
         if isFaceDetected && !self.faceDetected {
             self.faceDetected = true

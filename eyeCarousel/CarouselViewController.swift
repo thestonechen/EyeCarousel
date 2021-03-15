@@ -35,6 +35,7 @@ class CarouselViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.setupCollectionView()
+        self.faceTracker.delegate = self
         self.view.addSubview(self.collectionView)
         
         // Start face tracker
@@ -63,29 +64,33 @@ class CarouselViewController: UIViewController {
     
     
     func changeToNextImage() {
-        //self.collectionView.scrollToItem(at: <#T##IndexPath#>, at: <#T##UICollectionView.ScrollPosition#>, animated: <#T##Bool#>)
+        let contentOffsetXOfNextImage = self.collectionView.contentOffset.x + self.collectionView.frame.width
+        
+        // TODO: Re-look into scrollToItem instead of contentOffset
+        self.collectionView.setContentOffset(CGPoint(x: contentOffsetXOfNextImage,
+                                                     y: self.collectionView.contentOffset.y),
+                                             animated: true)
+        
+        self.handleIndexingForInfiniteLooping(self.collectionView)
     }
     
     func handleIndexingForInfiniteLooping(_ scrollView: UIScrollView) {
         
-        let index = Int((collectionView.contentOffset.x)/(collectionView.bounds.size.width))
-
+        let index = Int((self.collectionView.contentOffset.x)/(self.collectionView.bounds.size.width))
+        
         guard index == self.images.count - 1 else {
             return
         }
 
         // If we're at the last image, which is the duplicated first image, set the contentOffset to be 0
-        self.collectionView.setContentOffset(CGPoint(x: 0, y: self.collectionView.contentOffset.y), animated: false)
+        self.collectionView.setContentOffset(CGPoint(x: 0,
+                                                     y: self.collectionView.contentOffset.y),
+                                             animated: false)
     }
 }
 
 
 extension CarouselViewController: UICollectionViewDelegate {
-    
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        self.collectionView.deselectItem(at: indexPath, animated: true)
-        // Do something when selected? Or actually not needed...
-    }
     
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         self.handleIndexingForInfiniteLooping(scrollView)
@@ -123,5 +128,30 @@ extension CarouselViewController: UICollectionViewDelegateFlowLayout{
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
         return UIEdgeInsets(top: 1, left: 1, bottom: 1, right: 1)
+    }
+}
+
+extension CarouselViewController: FaceTrackerDelegate {
+    
+    func faceTracker(_ tracker: FaceTracker, didFailWithError error: Error) {
+        // SHOW ALERTS HERE
+    }
+    
+    func faceTrackerWasInterrupted(_ tracker: FaceTracker) {
+        
+    }
+    
+    func faceTrackerInterruptionEnded(_ tracker: FaceTracker) {
+        
+    }
+    
+    func faceTrackerDidStartDetectingFace(_ tracker: FaceTracker) {
+        DispatchQueue.main.async {
+            self.changeToNextImage()
+        }
+    }
+    
+    func faceTrackerDidEndDetectingFace(_ tracker: FaceTracker) {
+        
     }
 }

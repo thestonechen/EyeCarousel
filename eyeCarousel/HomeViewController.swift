@@ -18,7 +18,10 @@ class HomeViewController: UIViewController {
     }
     
     func setupNavigationBar() {
-         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addButtonTapped))
+        
+        // Disable scrolling to previous VC by swiping back 
+        self.navigationController?.interactivePopGestureRecognizer?.isEnabled = false
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addButtonTapped))
     }
     
     @objc
