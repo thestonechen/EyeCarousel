@@ -64,14 +64,20 @@ class CarouselViewController: UIViewController {
     
     
     func changeToNextImage() {
+        
+        let currentIndex = Int((self.collectionView.contentOffset.x)/(self.collectionView.bounds.size.width))
         let contentOffsetXOfNextImage = self.collectionView.contentOffset.x + self.collectionView.frame.width
         
-        // TODO: Re-look into scrollToItem instead of contentOffset
-        self.collectionView.setContentOffset(CGPoint(x: contentOffsetXOfNextImage,
-                                                     y: self.collectionView.contentOffset.y),
-                                             animated: true)
-        
-        self.handleIndexingForInfiniteLooping(self.collectionView)
+        // If we're at the second to last image, instead of going to the duplicated last image, go to the first image
+        if currentIndex == self.images.count - 2 {
+            self.collectionView.setContentOffset(CGPoint(x: 0,
+                                                         y: self.collectionView.contentOffset.y),
+                                                 animated: true)
+        } else {
+            self.collectionView.setContentOffset(CGPoint(x: contentOffsetXOfNextImage,
+                                                         y: self.collectionView.contentOffset.y),
+                                                 animated: true)
+        }
     }
     
     func handleIndexingForInfiniteLooping(_ scrollView: UIScrollView) {
@@ -111,7 +117,7 @@ extension CarouselViewController: UICollectionViewDataSource {
 }
 
 
-extension CarouselViewController: UICollectionViewDelegateFlowLayout{
+extension CarouselViewController: UICollectionViewDelegateFlowLayout {
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: self.collectionView.frame.size.width - 1,
@@ -125,10 +131,11 @@ extension CarouselViewController: UICollectionViewDelegateFlowLayout{
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
         return 1
     }
-    
+ 
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
         return UIEdgeInsets(top: 1, left: 1, bottom: 1, right: 1)
     }
+ 
 }
 
 extension CarouselViewController: FaceTrackerDelegate {
@@ -146,9 +153,7 @@ extension CarouselViewController: FaceTrackerDelegate {
     }
     
     func faceTrackerDidStartDetectingFace(_ tracker: FaceTracker) {
-        DispatchQueue.main.async {
-            self.changeToNextImage()
-        }
+        self.changeToNextImage()
     }
     
     func faceTrackerDidEndDetectingFace(_ tracker: FaceTracker) {

@@ -116,10 +116,10 @@ class FaceTracker: NSObject {
                 self.addObservers()
                 
             case .notAuthorized:
-                self.delegate?.faceTracker(self, didFailWithError: FaceTrackerError.notAuthorized)
+                DispatchQueue.main.async { self.delegate?.faceTracker(self, didFailWithError: FaceTrackerError.notAuthorized) }
                 
             case .configurationFailed:
-                self.delegate?.faceTracker(self, didFailWithError: FaceTrackerError.configurationError)
+                DispatchQueue.main.async { self.delegate?.faceTracker(self, didFailWithError: FaceTrackerError.configurationError) }
             }
         }
     }
@@ -134,21 +134,21 @@ class FaceTracker: NSObject {
     @objc
     func sessionRuntimeError(notification: NSNotification) {
         guard let error = notification.userInfo?[AVCaptureSessionErrorKey] as? Error else {
-            self.delegate?.faceTracker(self, didFailWithError: FaceTrackerError.unknown)
+            DispatchQueue.main.async { self.delegate?.faceTracker(self, didFailWithError: FaceTrackerError.unknown) } 
             return
         }
         
-        self.delegate?.faceTracker(self, didFailWithError: FaceTrackerError.runtimeError(error))
+        DispatchQueue.main.async { self.delegate?.faceTracker(self, didFailWithError: FaceTrackerError.runtimeError(error)) }
     }
     
     @objc
     func sessionWasInterrupted(notification: NSNotification) {
-        self.delegate?.faceTrackerWasInterrupted(self)
+        DispatchQueue.main.async { self.delegate?.faceTrackerWasInterrupted(self) }
     }
     
     @objc
     func sessionInterruptionEnded(notification: NSNotification) {
-        self.delegate?.faceTrackerInterruptionEnded(self)
+        DispatchQueue.main.async { self.delegate?.faceTrackerInterruptionEnded(self) }
     }
 
 }
@@ -158,15 +158,13 @@ extension FaceTracker: AVCaptureMetadataOutputObjectsDelegate {
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
         
         let isFaceDetected = metadataObjects.contains(where: { $0.type == .face })
-        
-        //print(isFaceDetected)
-        
+
         if isFaceDetected && !self.faceDetected {
             self.faceDetected = true
-            self.delegate?.faceTrackerDidStartDetectingFace(self)
+            DispatchQueue.main.async { self.delegate?.faceTrackerDidStartDetectingFace(self) }
         } else if !isFaceDetected && self.faceDetected {
             self.faceDetected = false
-            self.delegate?.faceTrackerDidEndDetectingFace(self)
+            DispatchQueue.main.async { self.delegate?.faceTrackerDidEndDetectingFace(self) }
         }
     }
 }
