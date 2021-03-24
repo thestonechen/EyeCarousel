@@ -13,28 +13,25 @@ class CarouselViewController: UIViewController {
     private var faceTracker: FaceTracker
     private let collectionView: UICollectionView
     private var timer: Timer?
-    private var isPaused: Bool
-    private var faceTrackerIsInterupted: Bool
     
-    private var isFaceShown = false {
+    private var isPaused: Bool {
         didSet {
-            // This should be separate method (called when changing button )
-            if isFaceShown && !self.faceTrackerIsInterupted && !self.isPaused {
-                self.timer = Timer.scheduledTimer(timeInterval: 2,
-                                                  target: self,
-                                                  selector: #selector(changeToNextImage),
-                                                  userInfo: nil,
-                                                  repeats: true)
-                print("face is shown")
-            } else {
-                self.timer?.invalidate()
-                print("face is NOT shown")
-            }
+            self.enableDisableTimer()
         }
     }
     
+    private var faceTrackerIsInterupted: Bool {
+        didSet {
+            self.enableDisableTimer()
+        }
+    }
     
-
+    private var isFaceShown: Bool {
+        didSet {
+            self.enableDisableTimer()
+        }
+    }
+    
     init(image: UIImage) {
         // Want the first element to be the first and last for infinite looping purposes
         self.images = [image, image]
@@ -43,6 +40,7 @@ class CarouselViewController: UIViewController {
                                                collectionViewLayout: UICollectionViewFlowLayout())
         self.isPaused = false
         self.faceTrackerIsInterupted = false
+        self.isFaceShown = false
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -58,6 +56,7 @@ class CarouselViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.setupNavigationBar()
         self.setupCollectionView()
         self.faceTracker.delegate = self
         self.view.addSubview(self.collectionView)
@@ -69,6 +68,14 @@ class CarouselViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         self.collectionView.frame = self.view.bounds
+    }
+    
+    func setupNavigationBar() {
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(title: NSLocalizedString("Pause",
+                                                                                          comment: ""),
+                                                                 style: .plain,
+                                                                 target: self,
+                                                                 action: #selector(pauseButtonTapped))
     }
     
     func setupCollectionView() {
@@ -87,6 +94,19 @@ class CarouselViewController: UIViewController {
     }
     
     @objc
+    func pauseButtonTapped() {
+        if self.isPaused {
+            self.navigationItem.rightBarButtonItem?.title = NSLocalizedString("Pause", comment: "")
+            self.faceTracker.resume()
+        } else {
+            self.navigationItem.rightBarButtonItem?.title = NSLocalizedString("Resume", comment: "")
+            self.faceTracker.pause()
+        }
+        
+        self.isPaused = !self.isPaused
+    }
+    
+    @objc
     func changeToNextImage() {
         let currentIndex = Int((self.collectionView.contentOffset.x)/(self.collectionView.bounds.size.width))
         let contentOffsetXOfNextImage = self.collectionView.contentOffset.x + self.collectionView.frame.width
@@ -101,6 +121,18 @@ class CarouselViewController: UIViewController {
             self.collectionView.setContentOffset(CGPoint(x: contentOffsetXOfNextImage,
                                                          y: self.collectionView.contentOffset.y),
                                                  animated: true)
+        }
+    }
+    
+    func enableDisableTimer() {
+        if isFaceShown && !self.faceTrackerIsInterupted && !self.isPaused {
+            self.timer = Timer.scheduledTimer(timeInterval: 2,
+                                              target: self,
+                                              selector: #selector(changeToNextImage),
+                                              userInfo: nil,
+                                              repeats: true)
+        } else {
+            self.timer?.invalidate()
         }
     }
     
