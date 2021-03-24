@@ -12,6 +12,28 @@ class CarouselViewController: UIViewController {
     private var images: [UIImage]
     private var faceTracker: FaceTracker
     private let collectionView: UICollectionView
+    private var timer: Timer?
+    private var isPaused: Bool
+    private var faceTrackerIsInterupted: Bool
+    
+    private var isFaceShown = false {
+        didSet {
+            // This should be separate method (called when changing button )
+            if isFaceShown && !self.faceTrackerIsInterupted && !self.isPaused {
+                self.timer = Timer.scheduledTimer(timeInterval: 2,
+                                                  target: self,
+                                                  selector: #selector(changeToNextImage),
+                                                  userInfo: nil,
+                                                  repeats: true)
+                print("face is shown")
+            } else {
+                self.timer?.invalidate()
+                print("face is NOT shown")
+            }
+        }
+    }
+    
+    
 
     init(image: UIImage) {
         // Want the first element to be the first and last for infinite looping purposes
@@ -19,6 +41,8 @@ class CarouselViewController: UIViewController {
         self.faceTracker = FaceTracker()
         self.collectionView = UICollectionView(frame: .zero,
                                                collectionViewLayout: UICollectionViewFlowLayout())
+        self.isPaused = false
+        self.faceTrackerIsInterupted = false
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -62,13 +86,13 @@ class CarouselViewController: UIViewController {
         self.collectionView.isPagingEnabled = true
     }
     
-    
+    @objc
     func changeToNextImage() {
-        
         let currentIndex = Int((self.collectionView.contentOffset.x)/(self.collectionView.bounds.size.width))
         let contentOffsetXOfNextImage = self.collectionView.contentOffset.x + self.collectionView.frame.width
         
         // If we're at the second to last image, instead of going to the duplicated last image, go to the first image
+        // TODO: Consider calling handleIndexingForInfiniteLooping here
         if currentIndex == self.images.count - 2 {
             self.collectionView.setContentOffset(CGPoint(x: 0,
                                                          y: self.collectionView.contentOffset.y),
@@ -145,18 +169,18 @@ extension CarouselViewController: FaceTrackerDelegate {
     }
     
     func faceTrackerWasInterrupted(_ tracker: FaceTracker) {
-        
+        self.faceTrackerIsInterupted = true
     }
     
     func faceTrackerInterruptionEnded(_ tracker: FaceTracker) {
-        
+        self.faceTrackerIsInterupted = false
     }
     
     func faceTrackerDidStartDetectingFace(_ tracker: FaceTracker) {
-        self.changeToNextImage()
+        self.isFaceShown = true
     }
     
     func faceTrackerDidEndDetectingFace(_ tracker: FaceTracker) {
-        
+        self.isFaceShown = false
     }
 }
