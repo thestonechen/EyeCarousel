@@ -162,7 +162,7 @@ extension CarouselViewController: UICollectionViewDelegate {
 extension CarouselViewController: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return images.count
+        return self.images.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -187,17 +187,57 @@ extension CarouselViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
         return 1
     }
- 
+    
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
         return UIEdgeInsets(top: 1, left: 1, bottom: 1, right: 1)
     }
- 
+    
 }
 
 extension CarouselViewController: FaceTrackerDelegate {
     
     func faceTracker(_ tracker: FaceTracker, didFailWithError error: Error) {
-        // SHOW ALERTS HERE
+        switch error {
+        
+        case FaceTrackerError.notAuthorized:
+            let message = NSLocalizedString("EyeCarousel doesn't have permission to use the camera to detect your face, please change the permission in settings", comment: "")
+            let alertController = UIAlertController(title: "EyeCarousel", message: message, preferredStyle: .alert)
+            
+            alertController.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""),
+                                                    style: .cancel,
+                                                    handler: nil))
+            
+            alertController.addAction(UIAlertAction(title: NSLocalizedString("Settings", comment: ""),
+                                                    style: .`default`,
+                                                    handler: { _ in
+                                                        UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!,
+                                                                                  options: [:],
+                                                                                  completionHandler: nil)
+                                                    }))
+            
+            self.present(alertController, animated: true, completion: nil)
+            
+        case FaceTrackerError.configurationError:
+            let message = NSLocalizedString("Error with configuration. Unable to track face.", comment: "")
+            let alertController = UIAlertController(title: "EyeCarousel", message: message, preferredStyle: .alert)
+            
+            alertController.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""),
+                                                    style: .cancel,
+                                                    handler: nil))
+            
+            self.present(alertController, animated: true, completion: nil)
+        
+        default:
+            let message = NSLocalizedString("Unknown error. Unable to track face.", comment: "")
+            let alertController = UIAlertController(title: "EyeCarousel", message: message, preferredStyle: .alert)
+            
+            alertController.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""),
+                                                    style: .cancel,
+                                                    handler: nil))
+            
+            self.present(alertController, animated: true, completion: nil)
+        }
+        
     }
     
     func faceTrackerWasInterrupted(_ tracker: FaceTracker) {
