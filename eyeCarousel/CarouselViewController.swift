@@ -149,6 +149,18 @@ class CarouselViewController: UIViewController {
                                                      y: self.collectionView.contentOffset.y),
                                              animated: false)
     }
+    
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        
+        let index = round(self.collectionView.contentOffset.x / self.collectionView.bounds.size.width)
+        let contentOffsetForRotation = CGPoint(x: index * size.width, y: self.collectionView.contentOffset.y)
+
+        coordinator.animate(alongsideTransition: { [weak self] _ in
+            self?.collectionView.reloadData()
+            self?.collectionView.setContentOffset(contentOffsetForRotation, animated: false)
+        }, completion: nil)
+    }
 }
 
 
