@@ -13,8 +13,6 @@ class HomeViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.setupNavigationBar()
-        self.view.backgroundColor = .blue
-        
     }
     
     func setupNavigationBar() {
@@ -32,6 +30,10 @@ class HomeViewController: UIViewController {
         let picker = PHPickerViewController(configuration: configuration)
         picker.delegate = self
         self.present(picker, animated: true, completion: nil)
+    }
+    
+    override var prefersStatusBarHidden: Bool {
+        return true
     }
 }
 

@@ -161,6 +161,10 @@ class CarouselViewController: UIViewController {
             self?.collectionView.setContentOffset(contentOffsetForRotation, animated: false)
         }, completion: nil)
     }
+    
+    override var prefersStatusBarHidden: Bool {
+        return true
+    }
 }
 
 
@@ -189,8 +193,9 @@ extension CarouselViewController: UICollectionViewDelegateFlowLayout {
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: self.collectionView.frame.size.width - 1,
-                      height: self.collectionView.frame.size.height)
+                      height: self.collectionView.frame.size.height - (self.navigationController?.navigationBar.frame.size.height ?? 0))
     }
+
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
         return 1
@@ -201,7 +206,7 @@ extension CarouselViewController: UICollectionViewDelegateFlowLayout {
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-        return UIEdgeInsets(top: 1, left: 1, bottom: 1, right: 1)
+        return UIEdgeInsets(top: 0, left: 1, bottom: 0, right: 1)
     }
     
 }
