@@ -44,6 +44,20 @@ class CarouselViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
     }
     
+    init(images: [UIImage]) {
+        self.images = images
+        self.images.append(images[0]) // Want the first element to be the first and last for infinite looping purposes
+        
+        // TODO: Put the below in a helper method to be called by both initializers
+        self.faceTracker = FaceTracker()
+        self.collectionView = UICollectionView(frame: .zero,
+                                               collectionViewLayout: UICollectionViewFlowLayout())
+        self.isPaused = false
+        self.faceTrackerIsInterupted = false
+        self.isFaceShown = false
+        super.init(nibName: nil, bundle: nil)
+    }
+    
     func addImage(image: UIImage) {
         // Since we duplicate the first image to be the first and last, we need to insert new images to be second to last
         self.images.insert(image, at: self.images.count-1)

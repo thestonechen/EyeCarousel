@@ -29,12 +29,6 @@ class UserDefaultsManager {
     
     func doesAlbumNameExist(_ name: String) -> Bool {
         if let albums = userDefaults.value(forKey: self.albumKey) as? [String] {
-            if albums.contains(name) {
-                print("album name exists")
-            }
-            else {
-                print("album name unique")
-            }
             return albums.contains(name)
         }
         
