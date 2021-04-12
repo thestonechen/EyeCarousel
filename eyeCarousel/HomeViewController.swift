@@ -17,6 +17,7 @@ class HomeViewController: UIViewController {
     let cache = ImageCache.default
     
     let tableView = UITableView()
+    let cacheSerialQueue = DispatchQueue(label: "com.thestonechen.eyecarousel.cachequeue")
     
     
     override func viewDidLoad() {
@@ -41,11 +42,7 @@ class HomeViewController: UIViewController {
     
     func setupCache() {
         self.cache.diskStorage.config.expiration = .never
-        self.cache.diskStorage.config.sizeLimit = 0 // Should play around with this number and see how much memory is left --
-        // WHAT HAPPENS IF NO LIMIT...
-        // SET MEMORY CACHE TO EMPTY?
-        
-        // TODO: Double check this...
+        self.cache.diskStorage.config.sizeLimit = 0
         self.cache.memoryStorage.config.totalCostLimit = 1
     }
     
@@ -85,7 +82,7 @@ class HomeViewController: UIViewController {
             UserDefaultsManager.shared.addAlbum(albumName)
             
             var carouselVC: CarouselViewController?
-            var images = [UIImage]()
+            var imageCount = 0
             for result in results {
                 if result.itemProvider.canLoadObject(ofClass: UIImage.self) {
                     result.itemProvider.loadObject(ofClass: UIImage.self, completionHandler: { (image, error) in
@@ -96,7 +93,12 @@ class HomeViewController: UIViewController {
                         }
                        
                         if let image = image as? UIImage {
-                            images.append(image)
+                            print("Calling cacheImages on \(image)")
+                            self.cacheSerialQueue.async {
+                                self.cacheImage(image, albumName: albumName, imageCount: imageCount)
+                                imageCount+=1
+                            }
+                            
                             DispatchQueue.main.async {
                                 if let carouselVC = carouselVC {
                                     carouselVC.addImage(image: image)
@@ -109,8 +111,6 @@ class HomeViewController: UIViewController {
                     })
                 }
             }
-
-            self.cacheImages(images, albumName: albumName)
         })
         okAction.isEnabled = false
         
@@ -168,48 +168,55 @@ extension HomeViewController: PHPickerViewControllerDelegate {
 
 // TODO: Testing KingFisher stuff here -- probably want this to live elsewhere
 extension HomeViewController {
-    // Given an array of uiimages, cache each one
     
-    func cacheImages(_ images: [UIImage], albumName: String ) {
-        for i in 0..<images.count {
-            let cacheKey = "\(albumName)\(i)"
-            print(cacheKey)
-            self.cache.store(images[i], forKey: cacheKey) // Should see where this is being stored - disk vs memory
-            
-            // Delete later
-            let cacheType = cache.imageCachedType(forKey: cacheKey)
-            print(cacheType)
-        }
+    func cacheImage(_ image: UIImage, albumName: String, imageCount: Int) {
+        // TODO: Do i need to ensure this happens on same queue, or risk race conditions
+        let cacheKey = "\(albumName)\(imageCount)"
+        print("Caching image \(image) with key: \(cacheKey)")
+        self.cache.store(image, forKey: cacheKey)
+        
+        // TODO: Look into better way for this
+        let cacheType = cache.imageCachedType(forKey: cacheKey)
+        print("Cache type saved in \(cacheType)")
         
     }
     
-    func retrieveCachedImages(with albumName: String) -> [UIImage] {
-        var images = [UIImage]()
-        for i in 0..<self.maxSavableAlbums+1 {
+    func retrieveCachedImages(with albumName: String) {
+        var carouselVC: CarouselViewController?
+        for i in 0..<self.maxSavableAlbums {
             let cacheKey = "\(albumName)\(i)"
             if !cache.isCached(forKey: cacheKey) {
-                return images
+                print("No image cached for cachekey: \(cacheKey)")
+                return
             }
+            
+            let cacheType = cache.imageCachedType(forKey: cacheKey)
+            print("Cache type saved in \(cacheType)")
             
             cache.retrieveImage(forKey: cacheKey) { result in
                 switch result {
                 case .success(let value):
                     if value.cacheType != .none { // Safety check to ensure no crash
-                        // TODO: Make sure this is appended in time before the final result is returned
-                        print("image added \(i)")
-                        images.append(value.image!)
+                        print("image found in cache with cachekey \(cacheKey)")
+        
+                        DispatchQueue.main.async {
+                            if let carouselVC = carouselVC {
+                                carouselVC.addImage(image: value.image!)
+                            } else {
+                                carouselVC = CarouselViewController(image: value.image!)
+                                self.navigationController?.pushViewController(carouselVC!, animated: true)
+                            }
+                        }
                     }
                 case .failure(let error):
                     print(error)
                 }
             }
         }
-        print("returning images")
-        return images
     }
     
     func removeImagesFromCache(with albumName: String) {
-        for i in 0..<self.maxSavableAlbums+1 {
+        for i in 0..<self.maxSavableAlbums {
             let cacheKey = "\(albumName)\(i)"
             if cache.isCached(forKey: cacheKey) {
                 self.cache.removeImage(forKey: cacheKey)
@@ -221,17 +228,9 @@ extension HomeViewController {
 extension HomeViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         self.tableView.deselectRow(at: indexPath, animated: true)
-        // Cell selected
         let albums = UserDefaultsManager.shared.getExistingAlbums()
         let album = albums[indexPath.row]
-        let images = self.retrieveCachedImages(with: album)
-        
-        guard !images.isEmpty else {
-            print("Error retrieving images for album")
-            return
-        }
-        let carouselVC = CarouselViewController(images: images)
-        self.navigationController?.pushViewController(carouselVC, animated: true)
+        self.retrieveCachedImages(with: album)
     }
 }
 
