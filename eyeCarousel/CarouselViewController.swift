@@ -112,7 +112,6 @@ class CarouselViewController: UIViewController {
         let contentOffsetXOfNextImage = self.collectionView.contentOffset.x + self.collectionView.frame.width
         
         // If we're at the second to last image, instead of going to the duplicated last image, go to the first image
-        // TODO: Consider calling handleIndexingForInfiniteLooping here
         if currentIndex == self.images.count - 2 {
             self.collectionView.setContentOffset(CGPoint(x: 0,
                                                          y: self.collectionView.contentOffset.y),

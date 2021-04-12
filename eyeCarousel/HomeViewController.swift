@@ -12,7 +12,6 @@ import Kingfisher // NEED TO REFACTOR AND MOVE THIS TO SEPARATE CLASS AT SOME PO
 class HomeViewController: UIViewController {
     
     let maxAlbumNameCharacters = 10
-    let maxSavableAlbums = 10
     let maxSavableImagesPerAlbum = 10
     let cache = ImageCache.default
     let cellIdentifier = "albumCell"
@@ -56,18 +55,14 @@ class HomeViewController: UIViewController {
     }
     
     func setupNavigationBar() {
-        
         // Disable scrolling to previous VC by swiping back 
         self.navigationController?.interactivePopGestureRecognizer?.isEnabled = false
-        
-        // TODO: Only want a max number of albums before showing this???
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addButtonTapped))
     }
     
     @objc
     func addButtonTapped() {
         var configuration = PHPickerConfiguration()
-        // TODO: Make this a constant to be referenced later on for album naming
         configuration.selectionLimit = self.maxSavableImagesPerAlbum
         configuration.filter = .images
         let picker = PHPickerViewController(configuration: configuration)
@@ -75,7 +70,6 @@ class HomeViewController: UIViewController {
         self.present(picker, animated: true, completion: nil)
     }
     
-    // TODO: Re-look into design if I want this on this VC
     override var prefersStatusBarHidden: Bool {
         return true
     }
@@ -86,7 +80,6 @@ class HomeViewController: UIViewController {
 
         alert.addTextField()
         
-        // TODO: Double check for retain cycle
         let okAction = UIAlertAction(title: "OK", style: .default, handler: { [weak alert, weak self] (_) in
             let albumName = alert!.textFields![0].text!
             UserDefaultsManager.shared.addAlbum(albumName)
@@ -103,7 +96,6 @@ class HomeViewController: UIViewController {
                         }
                        
                         if let image = image as? UIImage {
-                            print("Calling cacheImages on \(image)")
                             self?.cacheSerialQueue.async {
                                 self?.cacheImage(image, albumName: albumName, imageCount: imageCount)
                                 imageCount+=1
@@ -173,35 +165,22 @@ extension HomeViewController: PHPickerViewControllerDelegate {
 extension HomeViewController {
     
     func cacheImage(_ image: UIImage, albumName: String, imageCount: Int) {
-        // TODO: Do i need to ensure this happens on same queue, or risk race conditions
         let cacheKey = "\(albumName)\(imageCount)"
-        print("Caching image \(image) with key: \(cacheKey)")
         self.cache.store(image, forKey: cacheKey)
-        
-        // TODO: Look into better way for this
-        let cacheType = cache.imageCachedType(forKey: cacheKey)
-        print("Cache type saved in \(cacheType)")
-        
     }
     
     func retrieveCachedImages(with albumName: String) {
         var carouselVC: CarouselViewController?
-        for i in 0..<self.maxSavableAlbums {
+        for i in 0..<self.maxSavableImagesPerAlbum {
             let cacheKey = "\(albumName)\(i)"
             if !cache.isCached(forKey: cacheKey) {
-                print("No image cached for cachekey: \(cacheKey)")
                 return
             }
-            
-            let cacheType = cache.imageCachedType(forKey: cacheKey)
-            print("Cache type saved in \(cacheType)")
-            
+        
             cache.retrieveImage(forKey: cacheKey) { result in
                 switch result {
                 case .success(let value):
-                    if value.cacheType != .none { // Safety check to ensure no crash
-                        print("image found in cache with cachekey \(cacheKey)")
-        
+                    if value.cacheType != .none {
                         DispatchQueue.main.async {
                             if let carouselVC = carouselVC {
                                 carouselVC.addImage(image: value.image!)
@@ -219,10 +198,9 @@ extension HomeViewController {
     }
     
     func removeImagesFromCache(with albumName: String) {
-        for i in 0..<self.maxSavableAlbums {
+        for i in 0..<self.maxSavableImagesPerAlbum {
             let cacheKey = "\(albumName)\(i)"
             if cache.isCached(forKey: cacheKey) {
-                print("removing image with key \(cacheKey)")
                 self.cache.removeImage(forKey: cacheKey)
             }
         }

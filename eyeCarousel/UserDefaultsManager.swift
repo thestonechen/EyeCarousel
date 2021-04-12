@@ -36,10 +36,8 @@ class UserDefaultsManager {
     }
     
     func addAlbum(_ name: String) {
-        print("Adding album")
         if var albums = userDefaults.value(forKey: self.albumKey) as? [String] {
             albums.append(name)
-            print("Existing albums \(albums)")
             userDefaults.setValue(albums, forKey: self.albumKey)
         } else {
             userDefaults.setValue([name], forKey: self.albumKey)
