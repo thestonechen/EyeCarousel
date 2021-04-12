@@ -7,17 +7,16 @@
 
 import UIKit
 import PhotosUI
-import Kingfisher // NEED TO REFACTOR AND MOVE THIS TO SEPARATE CLASS AT SOME POINT. Adding here to confirm it works 
+import Kingfisher
 
 class HomeViewController: UIViewController {
     
     let maxAlbumNameCharacters = 10
     let maxSavableImagesPerAlbum = 10
     let cache = ImageCache.default
-    let cellIdentifier = "albumCell"
     var albums = [String]()
-    
     let tableView = UITableView()
+    let cellIdentifier = "albumCell"
     let cacheSerialQueue = DispatchQueue(label: "com.thestonechen.eyecarousel.cachequeue")
 
     
@@ -51,6 +50,8 @@ class HomeViewController: UIViewController {
     func setupCache() {
         self.cache.diskStorage.config.expiration = .never
         self.cache.diskStorage.config.sizeLimit = 0
+        
+        // Only want to store in disk cache
         self.cache.memoryStorage.config.totalCostLimit = 1
     }
     
@@ -74,7 +75,6 @@ class HomeViewController: UIViewController {
         return true
     }
     
-    // TODO: This method is too big, break it down. Also rename it
     func showNameAlbumAlert(with results: [PHPickerResult]) {
         let alert = UIAlertController(title: "Please enter a name for the album", message: nil, preferredStyle: .alert)
 
@@ -96,11 +96,13 @@ class HomeViewController: UIViewController {
                         }
                        
                         if let image = image as? UIImage {
+                            // Cache the image
                             self?.cacheSerialQueue.async {
                                 self?.cacheImage(image, albumName: albumName, imageCount: imageCount)
                                 imageCount+=1
                             }
                             
+                            // Display CaourselVC
                             DispatchQueue.main.async {
                                 if let carouselVC = carouselVC {
                                     carouselVC.addImage(image: image)
@@ -161,7 +163,6 @@ extension HomeViewController: PHPickerViewControllerDelegate {
     }
 }
 
-// TODO: Testing KingFisher stuff here -- probably want this to live elsewhere
 extension HomeViewController {
     
     func cacheImage(_ image: UIImage, albumName: String, imageCount: Int) {
