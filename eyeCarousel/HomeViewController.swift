@@ -15,9 +15,12 @@ class HomeViewController: UIViewController {
     let maxSavableAlbums = 10
     let maxSavableImagesPerAlbum = 10
     let cache = ImageCache.default
+    let cellIdentifier = "albumCell"
+    var albums = [String]()
     
     let tableView = UITableView()
     let cacheSerialQueue = DispatchQueue(label: "com.thestonechen.eyecarousel.cachequeue")
+
     
     
     override func viewDidLoad() {
@@ -28,6 +31,12 @@ class HomeViewController: UIViewController {
         self.setupCache()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.albums = UserDefaultsManager.shared.getExistingAlbums()
+        self.tableView.reloadData()
+    }
+    
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         self.tableView.frame = self.view.bounds
@@ -35,7 +44,7 @@ class HomeViewController: UIViewController {
     
     func setupTableView() {
         self.tableView.register(UITableViewCell.self,
-                                forCellReuseIdentifier: "cell")
+                                forCellReuseIdentifier: self.cellIdentifier)
         self.tableView.delegate = self
         self.tableView.dataSource = self
     }
@@ -71,13 +80,14 @@ class HomeViewController: UIViewController {
         return true
     }
     
-    // TODO: This method is too big, break it down
+    // TODO: This method is too big, break it down. Also rename it
     func showNameAlbumAlert(with results: [PHPickerResult]) {
         let alert = UIAlertController(title: "Please enter a name for the album", message: nil, preferredStyle: .alert)
 
         alert.addTextField()
         
-        let okAction = UIAlertAction(title: "OK", style: .default, handler: { [weak alert] (_) in
+        // TODO: Double check for retain cycle
+        let okAction = UIAlertAction(title: "OK", style: .default, handler: { [weak alert, weak self] (_) in
             let albumName = alert!.textFields![0].text!
             UserDefaultsManager.shared.addAlbum(albumName)
             
@@ -94,8 +104,8 @@ class HomeViewController: UIViewController {
                        
                         if let image = image as? UIImage {
                             print("Calling cacheImages on \(image)")
-                            self.cacheSerialQueue.async {
-                                self.cacheImage(image, albumName: albumName, imageCount: imageCount)
+                            self?.cacheSerialQueue.async {
+                                self?.cacheImage(image, albumName: albumName, imageCount: imageCount)
                                 imageCount+=1
                             }
                             
@@ -104,7 +114,7 @@ class HomeViewController: UIViewController {
                                     carouselVC.addImage(image: image)
                                 } else {
                                     carouselVC = CarouselViewController(image: image)
-                                    self.navigationController?.pushViewController(carouselVC!, animated: true)
+                                    self?.navigationController?.pushViewController(carouselVC!, animated: true)
                                 }
                             }
                         }
@@ -149,19 +159,12 @@ extension HomeViewController: PHPickerViewControllerDelegate {
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         
         picker.dismiss(animated: true, completion: nil)
-        // Show alert to save album name, need to make sure there is a photo to save the album, if not, same page...
-        // Need to also make sure the album name doesn't already exist (or a way of handling duplicate album names...)
-        // Need to make sure cache not full? Set a limit?
-        // Need to create a new constructor for carousel to initisalize with multiple images
-        // Can still use kingfisher, namingconvention? album_Name_5
-        // DISK CACHE is persistent
-        // need to sanitize album name
         
         guard !results.isEmpty else {
             return
         }
         
-        // Show an alert for album
+        // Show an alert for naming the album
         self.showNameAlbumAlert(with: results)
     }
 }
@@ -219,6 +222,7 @@ extension HomeViewController {
         for i in 0..<self.maxSavableAlbums {
             let cacheKey = "\(albumName)\(i)"
             if cache.isCached(forKey: cacheKey) {
+                print("removing image with key \(cacheKey)")
                 self.cache.removeImage(forKey: cacheKey)
             }
         }
@@ -232,19 +236,30 @@ extension HomeViewController: UITableViewDelegate {
         let album = albums[indexPath.row]
         self.retrieveCachedImages(with: album)
     }
+    
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if (editingStyle == .delete) {
+            let album = albums[indexPath.row]
+            UserDefaultsManager.shared.deleteAlbum(album)
+            self.albums.remove(at: indexPath.row)
+            self.tableView.deleteRows(at: [indexPath], with: .fade)
+            self.removeImagesFromCache(with: album)
+        }
+    }
 }
 
 extension HomeViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        // TODO: set this in viewWillappear
-        // TODO: Update this variable when deleting a row too
-        UserDefaultsManager.shared.getExistingAlbums().count
+        self.albums.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let albums = UserDefaultsManager.shared.getExistingAlbums()
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        cell.textLabel?.text = albums[indexPath.row]
+        let cell = tableView.dequeueReusableCell(withIdentifier: self.cellIdentifier, for: indexPath)
+        cell.textLabel?.text = self.albums[indexPath.row]
         return cell
     }
 }
